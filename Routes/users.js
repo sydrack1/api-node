@@ -3,43 +3,43 @@ const router = express.Router()
 const Users = require('../model/user')
 const bcrypt = require('bcrypt')
 
-router.get('/', (req, res)=> {
-    Users.find({},(err, data)=> {
-        if(err) return res.send({ error: `Erro na consulta de usuários`})
-        return res.send(data)
-    })  
+router.get('/', async (req, res)=> {
+    try{
+        const users = await Users.find({})
+        return res.send(users)
+    }catch(err){
+         return res.send({error:'Erro na consulta de usuários'})
+    }
 })
-router.post('/create', (req, res)=>{
+router.post('/create',async (req, res)=>{
     const {email, password} = req.body
     if(!email || !password) return res.send({error: 'Dados insuficientes! '})
 
-    Users.findOne({email}, (err, data)=> {
-        if(err) return res.send({error: 'Erro na busca de usuário!'})
-        if(data) return res.send({error: 'Usuário já cadastrado'})
+    try{
+        if(await Users.findOne({email})) return res.send({error: 'Usuário já cadastrado'})
 
-        Users.create(req.body, (err, data)=>{
-            if(err) return res.send({error: 'Erro ao cadastrar usuário'+ err})
-            data.password = undefined
-            return res.send(data)
-        })
-    })
-    
+        const user = await Users.create(req.body)
+        data.password = undefined
+         return res.send(data)
+    }catch(err){
+        return res.send({error: 'Erro na busca de usuário!'})
+    }
 })
-router.post('/auth', (req, res)=> {
+router.post('/auth', async (req,res)=>{
     const {email, password} = req.body
     if(!email || !password) return res.send({error: 'Dados insuficientes'})
+    try{
+        const user = await Users.findOne({email}).select('+password')
+        if(!user) res.send({error:'Usuário não cadastrado'})
 
-    Users.findOne({email}, (err, data)=>{
-        if(err) return res.send({error:'Erro na busca do usuário'})
-        if(!data) return res.send({error:'Usuário não cadastrado'})
+        const password_ok = await bcrypt.compare(password, user.password)
+        if(!password_ok)  return res.send({error: 'Erro ao autênticar usuário'+err})
+        user.password = undefined
 
-        bcrypt.compare(password, data.password, (err, same)=> {
-            if(!same) return res.send({error: 'Erro ao autênticar usuário'+err})
-            data.password = undefined
-
-            return res.send(data)
-        })
-    }).select('+password')
+        return res.send(user)
+    }catch(err){
+        return res.send({error:'Erro na busca do usuário'})
+    }
 })
 
 module.exports = router
