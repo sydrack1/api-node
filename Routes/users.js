@@ -2,6 +2,18 @@ const express = require('express')
 const router = express.Router()
 const Users = require('../model/user')
 const bcrypt = require('bcrypt')
+const jwt = require('jsonwebtoken')
+
+// FUNÇÕES AUXILIARES
+const createUserToken = userId => jwt.sign(
+    {
+    id: userId
+    },
+   'Vocêpodeentrar',
+   {
+       expiresIn: '7d'
+   } 
+)
 
 router.get('/', async (req, res)=> {
     try{
@@ -19,8 +31,8 @@ router.post('/create',async (req, res)=>{
         if(await Users.findOne({email})) return res.send({error: 'Usuário já cadastrado'})
 
         const user = await Users.create(req.body)
-        data.password = undefined
-         return res.send(data)
+        user.password = undefined
+         return res.send({user, token: createUserToken(user.id)})
     }catch(err){
         return res.send({error: 'Erro na busca de usuário!'})
     }
@@ -36,7 +48,7 @@ router.post('/auth', async (req,res)=>{
         if(!password_ok)  return res.send({error: 'Erro ao autênticar usuário'+err})
         user.password = undefined
 
-        return res.send(user)
+        return res.send({user, token: createUserToken(user.id)})
     }catch(err){
         return res.send({error:'Erro na busca do usuário'})
     }
