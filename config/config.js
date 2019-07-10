@@ -4,7 +4,9 @@ const config = () => {
     switch (env) {
         case 'dev':
             return{
-                database_url: 'mongodb+srv://admin:adminmaluco123@primeiraapi-4apoj.mongodb.net/test?retryWrites=true&w=majority'
+                database_url: 'mongodb+srv://admin:adminmaluco123@primeiraapi-4apoj.mongodb.net/test?retryWrites=true&w=majority',
+                jwtPassword: 'Vocêpodeentrar',
+                jwtExpiressIn: '7d'
             }
         case 'hml':
             return{
